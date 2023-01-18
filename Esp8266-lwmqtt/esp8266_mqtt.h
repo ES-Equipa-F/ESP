@@ -31,7 +31,43 @@
 #include <CloudIoTCoreMqtt.h>
 #include "ciotc_config.h" // Wifi configuration here
 
+#define vIN 5
+#define vAREF 3.3
+#define R 4000  // Voltage divider resistor value
+
+int lamp;
+int ldr=0;
+bool mov=0;
+int LDR = 0;
+int analog;
+float vADC, rLDR;
+int lightRef = 40;
+
+
 int values[3] = {};
+
+float getRLDR(float vADC) {
+  float LDR = (R * (vIN - vADC)) / vADC;             // Voltage divider to get the resistance of the LDR
+  return LDR;
+}
+
+float adconversion(int analog) {
+
+  float ADC = float(analog) * (vAREF / float(1023));  // Converts analog to voltage
+  //int lux = ???;                          // Converts resitance to lumen
+  return ADC;
+}
+
+int lightController(int light, int lightref, int spwm){
+  float kp=0.2;
+  int diff = lightref - light;
+  Serial.print("Lightdiff:    ");
+  Serial.println(diff); 
+  spwm = spwm + int(diff * kp);
+  spwm = max(min(spwm,100),0);
+
+  return spwm;
+}
 
 // !!REPLACEME!!
 // The MQTT callback function for commands and configuration updates
@@ -81,7 +117,7 @@ String send_data_ldr()
 {
   //send data ldr
   String value = "'value': " + String(ldr);
-  String sensor_id = "'sensor_id': 44";
+  String sensor_id = "'sensor_id': '" + String(device_id) + "_ldr'";
   return "{'Action':'send', 'table': 'sensor_value', " + value + ", " + sensor_id + "}";
 }
 
@@ -89,15 +125,19 @@ String send_data_mov()
 {
   //send data ld2410
   String value = "'value': " + String(mov);
-  String sensor_id = "'sensor_id': 45";
+  String sensor_id = "'sensor_id': '" + String(device_id) + "_movimento'";
   return "{'Action':'send', 'table': 'sensor_value', " + value + ", " + sensor_id + "}";
 }
 
 String send_data_lamp()
 {
+  int len = strlen(device_id);
+  Serial.println(device_id[len-1]);
+
   //send data lampada
   String value = "'value': " + String(lamp);
-  String light_id = "'light_id': " + device_id[-1];
+  String light_id = "'light_id': " + String(device_id[len-1]);
+  Serial.println(light_id);
   return "{'Action':'send', 'table': 'brightness_value', " + value + ", " + light_id + "}";
 }
 

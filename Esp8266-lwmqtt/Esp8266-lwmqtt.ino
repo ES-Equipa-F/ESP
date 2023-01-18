@@ -21,9 +21,7 @@
 #define ADDRESS2 0x11
 // 30-170
 
-int lamp;
-int ldr=0;
-bool mov=0;
+
 
 
 void send_to_dimmer(int ADDRESS, int outByte){
@@ -64,6 +62,7 @@ void loop(){
 
 
 bool altern=0;
+int ld2410 = 14; 
 
 void setup()
 {
@@ -75,10 +74,13 @@ void setup()
   timeClient.setTimeOffset(0);
   setupCloudIoT(); // Creates globals for MQTT
   pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(ld2410, INPUT);
 }
 
 static unsigned long lastMillis = 0;
 static unsigned long lastMillis1 = 0;
+int lastMillis2 = 0;
+
 void loop()
 {
   if (!mqtt->loop())
@@ -88,16 +90,59 @@ void loop()
 
   delay(10); // <- fixes some issues with WiFi stability
 
+  analog = analogRead(LDR);
+  vADC = adconversion(analog) - 0.15;
+  rLDR = getRLDR(vADC);
+  int buttonState = digitalRead(ld2410);
+
+  float light = (vADC/3.2) * 100;
+
+  if (millis() - lastMillis2 > 200)
+  {
+    lastMillis2 = millis();
+
+    /*
+    Serial.print("Ref: ");
+    Serial.print(lightRef);
+    Serial.print("   light: ");
+    Serial.print(light);
+    Serial.print("PWM: ");
+    Serial.println(pwm);
+    Serial.print("Vadc: ");
+    Serial.print(vADC);
+    Serial.print(" | R LDR: ");
+    Serial.println(rLDR);
+    */
+    Serial.print("Voltage:    ");
+    Serial.println(vADC); 
+    Serial.print("Light:    ");
+    Serial.println(light);
+    Serial.print("LD:    ");
+    Serial.println(buttonState);
+    if (values[0] == 0){
+      lamp = lightController(light, lightRef, lamp);
+      
+      if (buttonState == 0 && values[2] == 1){lamp=0;}
+      Serial.println(lamp);
+      send_to_dimmer(ADDRESS1, lamp);
+    }
+  }
   // Request data
   if (millis() - lastMillis > 50)
   {
     lastMillis = millis();
   
-    Serial.println(request_data());
+    //Serial.println(request_data());
     mqtt->publishTelemetry(request_data());
-    lamp = values[1] * 10;
-    Serial.println(lamp);
-    send_to_dimmer(ADDRESS1, lamp);
+    Serial.println(request_data());
+    lightRef = values[1] * 10;
+    if (values[0] == 1){
+      lamp = lightRef;
+      
+      if (buttonState == 0 && values[2] == 1){lamp=0;}
+      Serial.println(lamp);
+      send_to_dimmer(ADDRESS1, lamp);
+    }
   }
     
   //Send data
@@ -116,8 +161,6 @@ void loop()
     Serial.println(send_data_lamp());
     mqtt->publishTelemetry(send_data_lamp());
   }
-
-
 
 
 }
