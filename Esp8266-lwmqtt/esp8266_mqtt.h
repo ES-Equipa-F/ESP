@@ -17,7 +17,8 @@
 #include <ESP8266WiFi.h>
 #include <NTPClient.h>
 #include <WiFiUdp.h>
-#include "FS.h"
+#include <FS.h>
+
 
 // You need to set certificates to All SSL cyphers and you may need to
 // increase memory settings in Arduino/cores/esp8266/StackThunk.cpp:
@@ -42,6 +43,8 @@ int LDR = 0;
 int analog;
 float vADC, rLDR;
 int lightRef = 40;
+
+
 
 
 int values[3] = {};
@@ -227,13 +230,13 @@ static void setupCertAndPrivateKey()
 
 static void setupWifi()
 {
-  WiFi.mode(WIFI_STA);
+  /*WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
   Serial.println("Connecting to WiFi");
   while (WiFi.status() != WL_CONNECTED)
   {
     delay(100);
-  }
+  }*/
 
   configTime(0, 0, ntp_primary, ntp_secondary);
   Serial.println("Waiting on time sync...");

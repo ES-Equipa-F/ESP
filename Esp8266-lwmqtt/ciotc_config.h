@@ -42,7 +42,7 @@ const char* device_id = "atest-dev";
 const char* project_id = "active-tangent-372110";
 const char* location = "europe-west1";
 const char* registry_id = "ESP_reg";
-const char* device_id = "ESP_2";
+char* device_id="ESP_2";
 
 
 // Configuration for NTP
